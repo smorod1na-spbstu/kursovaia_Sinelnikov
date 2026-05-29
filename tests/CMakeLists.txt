@@ -25,3 +25,20 @@ if((BUILD_TTTCORE STREQUAL "FULL") OR (BUILD_TTTCORE STREQUAL "PREBUILT"))
   add_executable(test_my_player_vs_human test_my_player_vs_human.cpp human_player.cpp)
   target_link_libraries(test_my_player_vs_human tttplayer)
 endif()
+
+find_package(GTest REQUIRED)
+include(GoogleTest)
+
+add_executable(test_my_player_unit 
+    test_my_player_unit.cpp
+)
+
+target_link_libraries(test_my_player_unit 
+    PRIVATE 
+    tttplayer 
+    GTest::gtest_main 
+    GTest::gtest 
+    pthread
+)
+
+gtest_discover_tests(test_my_player_unit)

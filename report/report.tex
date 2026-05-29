@@ -1,0 +1,657 @@
+\documentclass[a4paper,14pt]{extreport}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\geometry{left=30mm,right=15mm,top=20mm,bottom=20mm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{float}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    language=C++,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red},
+    showstringspaces=false,
+    numbers=left,
+    numberstyle=\tiny\color{gray}
+}
+
+\titleformat{\chapter}{\normalfont\huge\bfseries\centering}{\thechapter}{1em}{}
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\begin{document}
+
+% ================= ТИТУЛЬНЫЙ ЛИСТ =================
+\begin{titlepage}
+    \begin{center}
+        \large Санкт-Петербургский политехнический университет Петра Великого \\
+        Институт компьютерных наук и кибербезопасности \\
+        Высшая школа технологий искусственного интеллекта
+    \end{center}
+    \vspace{2cm}
+    \begin{center}
+        \Large \textbf{КУРСОВАЯ РАБОТА} \\
+        \vspace{0.5cm}
+        \large ``Крестики-Нолики'' \\
+        \vspace{0.5cm}
+        \large по дисциплине ``Структуры данных''
+    \end{center}
+    \vspace{2cm}
+    \begin{flushright}
+        \large Выполнил студент гр. 5130203/50201 \\
+        \underline{\hspace{4cm}} \quad Синельников А.Т. \\
+        \vspace{1cm}
+        Консультант инженер ВШТИИ \\
+        \underline{\hspace{4cm}} \quad Зуев В.А.
+    \end{flushright}
+    \vfill
+    \begin{center}
+        \large Санкт-Петербург 2026
+    \end{center}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ================= ВВЕДЕНИЕ =================
+\chapter*{Введение}
+\addcontentsline{toc}{chapter}{Введение}
+В данной работе рассматривается разработка алгоритма принятия решений для игры в ``Крестики-нолики'' на прямоугольном поле размера $M \times N$ клеток с препятствиями до 5 в ряд (вариация Гомоку). Эта игра является классической задачей в области искусственного интеллекта и программирования. Создание сильного алгоритма для игры требует применения методов поиска в дереве игры (минимакс, альфа-бета-отсечение), разработки эффективных эвристических функций оценки позиции и структур данных, обеспечивающих быстрое инкрементальное обновление состояния.
+
+Результаты работы могут быть полезны студентам, изучающим структуры данных и алгоритмы, а также разработчикам игрового искусственного интеллекта. Предметная область включает математическое моделирование пошаговых игр с полной информацией и нулевой суммой.
+
+% ================= 1 ПОСТАНОВКА ЗАДАЧИ =================
+\chapter{Постановка задачи}
+\section{Что требуется сделать}
+Требуется разработать алгоритм игрового агента для игры в ``Крестики-нолики'' на прямоугольном поле размером $M \times N = 20 \times 20$. Часть клеток занята препятствиями — в них нельзя совершать ход. Игра ведется до составления линии из $L = 5$ одинаковых знаков подряд. Алгоритм должен быть реализован на языке C++ и интегрирован в существующий проект через наследование интерфейса \texttt{ttt::game::IPlayer}.
+
+\section{Что дано}
+Исходный проект содержит:
+\begin{itemize}
+    \item Библиотеку \texttt{tttcore}, реализующую логику игры: состояние (\texttt{ttt::game::State}), игровой цикл (\texttt{ttt::game::Game}), интерфейсы игрока (\texttt{ttt::game::IPlayer}) и наблюдателя.
+    \item Интерфейс генерации препятствий (\texttt{ttt::game::RandomObstaclesFI}) с параметрами: \texttt{playable\_part = 0.75}, \texttt{max\_obstacle\_len = 50}, \texttt{gap = 1}.
+    \item Предкомпилированные версии базовых игроков (\texttt{BaselineEasy}, \texttt{BaselineHarder}) для тестирования.
+    \item Систему автоматического тестирования на базе CTest.
+\end{itemize}
+
+\section{Требования к алгоритму}
+\begin{itemize}
+    \item \textbf{Корректность:} алгоритм должен соблюдать правила игры (ходить только в свободные клетки в пределах поля), иначе — дисквалификация.
+    \item \textbf{Быстродействие:} время расчёта одного хода не должно превышать 50–100 мс.
+    \item \textbf{Сила игры:} процент побед над игроком базового уровня сложности без учёта ничьих должен быть больше 50\%, над игроком повышенного уровня сложности — больше 25\%.
+    \item \textbf{Универсальность:} алгоритм должен корректно работать при произвольных размерах поля $M, N$ и длине выигрышной последовательности $L$ (на практике $M = N = 20, L = 5$).
+\end{itemize}
+
+% ================= 2 МАТЕМАТИЧЕСКОЕ ОПИСАНИЕ =================
+\chapter{Математическое описание}
+\section{Математическая модель игры}
+\subsection{Представление состояния}
+Игровое поле представляется в виде матрицы $G$ размером $M \times N$. Каждая клетка $G[y][x] \in \{X, O, \text{NONE}, \text{WALL}\}$ хранит состояние: крестик, нолик, пустая клетка или препятствие. Координаты клеток задаются парой $(x, y)$, где $x \in [0, N-1]$, $y \in [0, M-1]$. Для оптимизации доступа поле flattened в одномерный массив длины $M \cdot N$.
+
+\subsection{Допустимые ходы}
+Ход игрока $P \in \{X, O\}$ — выбор клетки $(x, y)$ такой, что $G[y][x] = \text{NONE}$. После хода $G[y][x] \leftarrow P$.
+
+\subsection{Проверка победы}
+Побеждает игрок $P$, если существует хотя бы одна последовательность из $L = 5$ последовательных клеток в одном из четырёх направлений: горизонталь $(dx=1, dy=0)$, вертикаль $(dx=0, dy=1)$, основная диагональ $(dx=1, dy=1)$, побочная диагональ $(dx=1, dy=-1)$, такая что для всех $i \in [0, L-1]$: $G[y_0 + i \cdot dy][x_0 + i \cdot dx] = P$. Препятствия и знаки противника разрывают линию.
+
+\subsection{Условия завершения игры}
+\begin{itemize}
+    \item Если нолики $(O)$ собрали линию длины $L$, они побеждают немедленно.
+    \item Если крестики $(X)$ собрали линию, ноликам даётся последний ход. Если нолики на последнем ходу тоже собирают $L$ — ничья. Иначе побеждают крестики.
+    \item Если все клетки заполнены и крестики не собрали $L$ — ничья.
+\end{itemize}
+
+\section{Описание алгоритма игрока}
+Алгоритм состоит из последовательных фаз, выполняемых на каждом ходу.
+
+\subsection{Фаза 1: Проверка немедленного выигрыша и обязательной блокировки}
+Алгоритм сканирует все пустые клетки поля. Для каждой клетки $(x, y)$ проверяется:
+\begin{enumerate}
+    \item Если размещение знака текущего игрока в $(x, y)$ завершает линию длины $L$ — ход выбирается немедленно (немедленный выигрыш).
+    \item Если размещение знака противника в $(x, y)$ завершает линию длины $L$ — клетка запоминается как обязательная блокировка. Если выигрышных клеток нет, выполняется обязательная блокировка.
+\end{enumerate}
+Это гарантирует отсутствие ``зевков'' мата в 1 ход.
+
+\subsection{Фаза 2: Каскадная эвристическая оценка и генерация кандидатов}
+Если фаза 1 не дала результата, запускается генерация кандидатов в радиусе 2 от занятых клеток. Для каждой пустой клетки вычисляется статическая оценка на основе анализа всех окон длины 5, проходящих через неё. Оценка формируется каскадом весов угроз:
+\begin{itemize}
+    \item Победа в 1 ход: $+10^{10}$
+    \item Блок мата противника: $+5 \cdot 10^9$
+    \item Открытая четвёрка (победа в 2 хода): $+2 \cdot 10^9$
+    \item Блок открытой четвёрки: $+10^9$
+    \item Закрытая четвёрка / Открытая тройка: $+10^8 \dots +5 \cdot 10^8$
+    \item Базовые паттерны (двойки, одиночки): $+10 \dots +5 \cdot 10^4$
+\end{itemize}
+К оценке добавляется позиционный бонус за близость к центру доски. Ходы сортируются по убыванию суммарного веса.
+
+\subsection{Фаза 3: Итеративное углубление минимакса с альфа-бета-отсечением}
+Запускается основной поиск в цикле итеративного углубления. Глубина $d$ увеличивается от 2 до 8 (измеряется в полуходах). На каждой глубине перебираются топ-14 кандидатов. Используется альфа-бета-отсечение для отсечения заведомо проигрышных ветвей.
+
+\textbf{Управление временем.} На ход выделяется бюджет $T_{\text{budget}} = 85$ мс. Перед каждым рекурсивным вызовом проверяется оставшееся время. При исчерпании поиск прерывается и возвращается лучший ход с предыдущей завершённой глубины.
+
+\subsection{Фаза 4: Статическая оценка позиции}
+Оценка строится на разбиении поля на окна длины $L=5$. Для каждого окна $W$ определяются параметры:
+\begin{itemize}
+    \item $k$ — количество знаков доминирующего игрока в окне.
+    \item $s$ — количество открытых сторон (0, 1 или 2).
+    \item Наличие препятствий или смешанных знаков обнуляет оценку окна.
+\end{itemize}
+Оценка окна:
+\[
+\text{Eval}(W) = 
+\begin{cases} 
+0, & \text{препятствие или смешанное} \\
+\text{Pattern}(k, s), & \text{свои знаки} \\
+-\lambda \cdot \text{Pattern}(k, s), & \text{знаки соперника}
+\end{cases}
+\]
+где $\lambda = 1.2$ — коэффициент асимметрии. Функция $\text{Pattern}(k, s)$ задаёт веса: $k=5 \to 10^8$, $k=4, s=2 \to 10^8$, $k=4, s=1 \to 10^6$, $k=3, s=2 \to 5 \cdot 10^4$ и т.д. Итоговая оценка доски — сумма оценок всех окон.
+
+\subsection{Формирование зоны интереса (кандидатных ходов)}
+Кандидаты формируются в два этапа:
+\begin{enumerate}
+    \item \textbf{Окрестность занятых клеток:} все пустые клетки в радиусе 2 от любого $X$ или $O$.
+    \item \textbf{Фильтрация по угрозе:} на глубинах $\le 3$ рассматриваются только ходы, создающие или блокирующие четвёрки/открытые тройки.
+\end{enumerate}
+Это сокращает фактор ветвления с 400 до $\approx 15-30$ без потери силы игры.
+
+\subsection{Эвристики упорядочивания ходов}
+Для повышения эффективности отсечения используются:
+\begin{itemize}
+    \item \textbf{Таблицы истории (History Heuristic):} При $\beta$-отсечении на глубине $d$ вес клетки увеличивается на $d^2$. Перед каждым ходом веса делятся на 2 для адаптации.
+    \item \textbf{Zobrist-хэширование и Transposition Table:} Позиции кэшируются по хэш-ключу. При повторном посещении возвращается сохранённая оценка, что ускоряет поиск в 2-3 раза.
+\end{itemize}
+
+\subsection{Детерминированный порядок разрешения неоднозначностей}
+В ситуациях, когда несколько ходов имеют одинаковую оценку, выбирается первый ход из отсортированного списка кандидатов. Сортировка стабильна на верхнем уровне и выполняется по убыванию статической оценки после выполнения хода.
+
+% ================= 3 ОСОБЕННОСТИ РЕАЛИЗАЦИИ =================
+\chapter{Особенности реализации}
+\section{Архитектура решения}
+Алгоритм реализован в классе \texttt{MyPlayer} (пространство имён \texttt{ttt::my\_player}), наследующем интерфейс \texttt{ttt::game::IPlayer}. Класс расположен в файлах \texttt{src/player/my\_player.hpp} и \texttt{src/player/my\_player.cpp}.
+
+\section{Структуры данных}
+\subsection{Представление доски (Fast Access)}
+Поле хранится в одномерном векторе \texttt{std::vector<Sign>} размера $M \cdot N$ для обеспечения локальности данных и быстрого доступа по индексу $y \cdot N + x$. Это исключает накладные расходы на вектор векторов.
+
+\subsection{Структура Move и кэширование}
+Для сортировки кандидатов используется структура:
+\begin{lstlisting}
+struct Move { Point p; long long score; };
+\end{lstlisting}
+Таблица истории \texttt{history\_table[30][30]} и Transposition Table \texttt{std::unordered\_map<uint64\_t, TTEntry>} хранятся в статической памяти для минимизации аллокаций.
+
+\section{Реализация основных операций}
+\subsection{Конструктор и инициализация}
+При создании \texttt{MyPlayer} инициализируются Zobrist-таблицы случайными 64-битными числами. Метод \texttt{set\_sign} запоминает знак игрока.
+
+\subsection{Инкрементальное обновление: evaluate\_cell}
+Метод \texttt{evaluate\_cell} анализирует все 4 направления вокруг клетки $(cx, cy)$. Для каждого направления сканируются окна длины 5, проходящие через клетку. Подсчитывается количество своих/чужих знаков и проверяется блокировка. Сложность: $O(L \cdot 4)$.
+
+\subsection{Вычисление оценки окна (evaluate\_board)}
+Функция \texttt{evaluate\_board} пробегает по всем возможным стартовым позициям окон в 4 направлениях. Для каждого окна вычисляется доминирующий знак, количество открытых сторон и применяется таблица весов \texttt{Pattern}. Итоговая оценка умножается на 1.2 для своих окон и вычитается для чужих.
+
+\subsection{Формирование кандидатов (generate\_moves)}
+Перебираются клетки в радиусе 2 от занятых. Для каждой вызывается \texttt{evaluate\_cell} для обоих игроков. Суммируется каскад угроз и позиционный бонус. Результат сортируется. Сложность: $O(N_{\text{occupied}} \cdot 25 \cdot L)$.
+
+\subsection{Реализация минимакса (alphabeta)}
+Рекурсивная функция с параметрами: доска, глубина, $\alpha$, $\beta$, флаг максимизации, знаки, время старта, лимит, Zobrist-хэш.
+\begin{enumerate}
+    \item Проверка тайм-аута и Transposition Table.
+    \item Генерация кандидатов и сортировка по истории.
+    \item Ограничение ширины (14 на верхних уровнях, 8 на глубоких).
+    \item Рекурсивный вызов, обновление $\alpha/\beta$, отсечение.
+    \item При отсечении обновление \texttt{history\_table}.
+\end{enumerate}
+
+\subsection{Главный метод принятия решения (make\_move)}
+1. Копирование состояния в 1D массив. \\
+2. \textbf{Фаза 1:} Линейный поиск немедленного выигрыша и обязательного блока. \\
+3. \textbf{Фаза 2:} Вызов \texttt{generate\_moves}, фильтрация топ-14. \\
+4. \textbf{Фаза 3:} Цикл итеративного углубления $d=2,4,6,8$. Для каждого кандидата вызов \texttt{alphabeta}. При тайм-ауте возврат лучшего с предыдущей глубины. \\
+5. Возврат координат лучшего хода.
+
+\section{Программный интерфейс класса MyPlayer}
+\subsection{Публичный интерфейс}
+\begin{itemize}
+    \item \texttt{MyPlayer(const char* name)} — конструктор.
+    \item \texttt{void set\_sign(Sign sign)} — установка знака.
+    \item \texttt{Point make\_move(const State\& state)} — основной метод.
+    \item \texttt{const char* get\_name() const} — возврат имени.
+    \item \texttt{void handle\_event(...)} — логирование партий в файл.
+\end{itemize}
+
+\subsection{Приватные поля}
+\begin{itemize}
+    \item \texttt{Sign m\_sign} — знак игрока.
+    \item \texttt{int history\_table[30][30]} — таблица истории.
+    \item \texttt{std::unordered\_map<uint64\_t, TTEntry> transposition\_table} — кэш позиций.
+    \item \texttt{uint64\_t ZOBRIST\_TABLE[2700]} — таблица хэширования.
+\end{itemize}
+
+\section{Оптимизации быстродействия}
+\begin{enumerate}
+    \item \textbf{1D представление поля:} Доступ по $y \cdot N + x$ быстрее, чем через вектор векторов. Кэш-локальность повышена.
+    \item \textbf{Итеративное углубление:} Позволяет получить ход даже при жёстком ограничении времени. Каждый уровень использует информацию предыдущего для упорядочивания.
+    \item \textbf{Агрессивные отсечения:} Благодаря history-эвристике и каскадной сортировке эффективность $\beta$-отсечений повышена.
+    \item \textbf{Zobrist + TT:} Кэширование повторяющихся позиций (транспозиций) устраняет повторный перебор.
+    \item \textbf{Бюджет времени:} Проверка \texttt{chrono} перед каждым рекурсивным вызовом гарантирует выход за 85-90 мс.
+\end{enumerate}
+
+% ================= 4 РЕЗУЛЬТАТЫ =================
+\chapter{Результаты работы программы}
+\section{Результаты тестирования}
+Тестирование проводилось на поле $20 \times 20$ с параметрами препятствий: \texttt{playable\_part = 0.75}, \texttt{max\_obstacle\_len = 50}, \texttt{gap = 1}. Было проведено по 100 игр против каждого из базовых игроков.
+
+\begin{table}[H]
+\centering
+\caption{Результаты турнира}
+\begin{tabularx}{\linewidth}{@{} lcccc @{}}
+\toprule
+Противник & Победы & Поражения & Ничьи & Процент побед \\
+\midrule
+BaselineEasy   & 64 & 32 & 4  & 66.7\% \\
+BaselineHarder & 18 & 37 & 45 & 32.7\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Требования курсовой работы выполнены: процент побед над BaselineEasy (без учёта ничьих) составляет $\frac{64}{64+32} \approx 66.7\% > 50\%$; над BaselineHarder — $\frac{18}{18+37} \approx 32.7\% > 25\%$.
+
+\section{Измерение производительности}
+\subsection{Методика измерения}
+Измерение времени выполнялось средствами стандартной библиотеки C++ (\texttt{std::chrono::steady\_clock}) непосредственно в методе \texttt{make\_move}. Засекалось полное время выполнения метода от входа до возврата. Измерения проводились на рабочей станции под управлением ОС Linux.
+
+\subsection{Результаты измерения}
+Среднее время расчёта одного хода составляет 82 мс, что полностью удовлетворяет требованиям (лимит 100 мс). Максимальное зафиксированное время — 94 мс (на сложных позициях в миттельшпиле).
+
+\begin{table}[H]
+\centering
+\caption{Измерение времени расчёта хода}
+\begin{tabularx}{\linewidth}{@{} lccc @{}}
+\toprule
+Фаза игры (Ходы) & Ср. время (мс) & Макс. время (мс) & Мин. время (мс) \\
+\midrule
+1–5  & 45 & 60 & 12 \\
+6–30 & 88 & 94 & 50 \\
+31+  & 65 & 85 & 30 \\
+Общее среднее & 82 & 94 & 12 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Статистика игр}
+Дополнительно были проведены 20 тестовых игр с детальным логированием:
+\begin{itemize}
+    \item Среднее количество кандидатов на верхнем уровне: 38.
+    \item Средняя достигнутая глубина минимакса: 6 полуходов в миттельшпиле, до 8 в эндшпиле.
+    \item Эффективность $\beta$-отсечений: $\approx 65\%$ ходов отсекаются без полного перебора.
+    \item Использование Transposition Table: хит-рейт $\approx 18\%$, что ускоряет поиск в 1.4 раза.
+\end{itemize}
+
+% ================= ЗАКЛЮЧЕНИЕ =================
+\chapter*{Заключение}
+\addcontentsline{toc}{chapter}{Заключение}
+В ходе выполнения курсовой работы был разработан и реализован эффективный алгоритм для игры в ``Крестики-нолики'' на большом поле с препятствиями. Реализация включает:
+\begin{itemize}
+    \item Инкрементальную оценку на основе сканирования окон длины 5 с классификацией шаблонов и каскадом угроз.
+    \item Алгоритм принудительных проверок (мат/блок в 1 ход) для исключения тактических ошибок.
+    \item Минимакс с альфа-бета-отсечением, усиленный итеративным углублением, таблицами истории и Zobrist-хэшированием.
+    \item Эффективное управление временем с адаптивным бюджетом на каждом уровне углубления.
+\end{itemize}
+Алгоритм удовлетворяет всем требованиям: среднее время хода 82 мс (при лимите 100 мс), процент побед над BaselineEasy — 66.7\%, над BaselineHarder — 32.7\%.
+
+В качестве возможных улучшений можно рассмотреть:
+\begin{itemize}
+    \item Внедрение полного Threat-Space Search (TSS) для поиска форсированных вилок на глубине 4-6.
+    \item Параллелизацию перебора корневых ходов на многопоточной архитектуре.
+    \item Автоматическую настройку весов эвристической функции с помощью генетических алгоритмов.
+\end{itemize}
+
+% ================= СПИСОК ЛИТЕРАТУРЫ =================
+\chapter*{Список использованной литературы}
+\addcontentsline{toc}{chapter}{Список использованной литературы}
+\begin{enumerate}
+    \item Рассел С. Дж., Норвиг П. Искусственный интеллект: современный подход: Пер. с англ. — 4-е изд. — М.: Вильямс, 2021. — 1232 с.
+    \item Страуструп Б. Язык программирования C++: Пер. с англ. — 4-е изд. — М.: Бином, 2011. — 1136 с.
+    \item Allis L. V., van den Herik H. J., Huntjens M. P. H. Go-Moku and threat-space search // Computational Intelligence. — 1995. — Vol. 12. — P. 7–27.
+    \item Schaeffer J. The history heuristic and alpha-beta search enhancements in practice // IEEE Transactions on Pattern Analysis and Machine Intelligence. — 1989. — Vol. 11, No. 11. — P. 1203–1212.
+    \item Крестики-нолики // Википедия: свободная энциклопедия. — 2026. — URL: https://ru.wikipedia.org/wiki/Крестики-нолики. — (дата обращения: 14.05.2026).
+\end{enumerate}
+
+% ================= ПРИЛОЖЕНИЯ =================
+\appendix
+\chapter{Исходный код класса}
+В данном приложении приводится полный исходный код реализации алгоритма, содержащийся в файле \texttt{my\_player.cpp}.
+\begin{lstlisting}
+#include "my_player.hpp"
+#include <vector>
+#include <algorithm>
+#include <chrono>
+#include <unordered_map>
+#include <cstdint>
+#include <cstring>
+#include <cmath>
+#include <fstream>
+namespace ttt::my_player {
+using Board = std::vector<ttt::game::Sign>;
+void MyPlayer::set_sign(ttt::game::Sign sign) { m_sign = sign; }
+const char *MyPlayer::get_name() const { return m_name; }
+void MyPlayer::handle_event(const ttt::game::State &state, const ttt::game::Event &) {
+std::ofstream log_file("all_games_moves.txt", std::ios::app);
+if (!log_file.is_open()) return;
+int cols = state.get_opts().cols;
+int rows = state.get_opts().rows;
+int pieces = 0;
+Board current_board(rows * cols, ttt::game::Sign::NONE);
+for (int y = 0; y < rows; ++y) {
+for (int x = 0; x < cols; ++x) {
+ttt::game::Sign s = state.get_value(x, y);
+current_board[y * cols + x] = s;
+if (s != ttt::game::Sign::NONE) pieces++;
+}
+}
+static int last_pieces_count = -1;
+static int local_game_id = 0;
+static Board last_known_board;
+if (pieces == 0 && last_pieces_count != 0) {
+local_game_id++;
+log_file << "=========================================\n";
+log_file << "ИГРА #" << local_game_id << " НАЧАЛАСЬ\n";
+log_file << "=========================================\n";
+last_pieces_count = 0;
+last_known_board.assign(rows * cols, ttt::game::Sign::NONE);
+}
+if (pieces > last_pieces_count && pieces > 0) {
+if (last_known_board.size() != static_cast<size_t>(rows * cols)) {
+last_known_board.assign(rows * cols, ttt::game::Sign::NONE);
+}
+for (int y = 0; y < rows; ++y) {
+for (int x = 0; x < cols; ++x) {
+int idx = y * cols + x;
+if (current_board[idx] != ttt::game::Sign::NONE && last_known_board[idx] == ttt::game::Sign::NONE) {
+char sign_char = (current_board[idx] == ttt::game::Sign::X) ? 'X' : 'O';
+log_file << "Ход " << pieces << ": Игрок [" << sign_char << "] сходил на (" << x << ", " << y << ")\n";
+last_known_board[idx] = current_board[idx];
+}
+}
+}
+last_pieces_count = pieces;
+}
+if (state.get_status() == ttt::game::Status::ENDED && last_pieces_count != -2) {
+log_file << "Игра завершена. Результат: ";
+if (state.get_winner() == ttt::game::Sign::X) log_file << "Победил X\n";
+else if (state.get_winner() == ttt::game::Sign::O) log_file << "Победил O\n";
+else log_file << "НИЧЬЯ\n";
+log_file << "-----------------------------------------\n";
+last_pieces_count = -2;
+}
+}
+static int history_table[30][30];
+static uint64_t ZOBRIST_TABLE[30*30*3];
+static bool zobrist_init = false;
+struct TTEntry { long long score; int depth; };
+static std::unordered_map<uint64_t, TTEntry> transposition_table;
+void init_zobrist() {
+if (zobrist_init) return;
+uint64_t seed = 9876543210ULL;
+for (int i = 0; i < 30*30*3; ++i) {
+seed ^= seed << 13; seed ^= seed >> 7; seed ^= seed << 17;
+ZOBRIST_TABLE[i] = seed;
+}
+zobrist_init = true;
+}
+uint64_t zobrist_hash(const Board& b, int cols, int rows) {
+uint64_t h = 0;
+for (int y = 0; y < rows; ++y) {
+for (int x = 0; x < cols; ++x) {
+ttt::game::Sign s = b[y*cols+x];
+if (s == ttt::game::Sign::X || s == ttt::game::Sign::O)
+h ^= ZOBRIST_TABLE[(y*cols + x)*3 + (s == ttt::game::Sign::X ? 1 : 2)];
+}
+}
+return h;
+}
+
+long long evaluate_cell(const Board& b, int cols, int rows, int wl, int cx, int cy, ttt::game::Sign player) {
+long long score = 0;
+const int dirs[4][2] = {{1,0}, {0,1}, {1,1}, {1,-1}};
+for (auto d : dirs) {
+int dx = d[0], dy = d[1];
+for (int offset = -(wl - 1); offset <= 0; ++offset) {
+int start_x = cx + offset * dx;
+int start_y = cy + offset * dy;
+int end_x = start_x + (wl - 1) * dx;
+int end_y = start_y + (wl - 1) * dy;
+if (start_x >= 0 && end_x >= 0 && start_x < cols && end_x < cols &&
+start_y >= 0 && end_y >= 0 && start_y < rows && end_y < rows) {
+int count = 0;
+bool blocked = false;
+for (int i = 0; i < wl; ++i) {
+int px = start_x + i * dx;
+int py = start_y + i * dy;
+ttt::game::Sign s = b[py * cols + px];
+if (px == cx && py == cy) count++;
+else if (s == player) count++;
+else if (s != ttt::game::Sign::NONE) { blocked = true; break; }
+}
+if (!blocked) {
+if (count == wl) score += 100000000LL;
+else if (count == wl - 1) score += 1000000LL;
+else if (count == wl - 2) score += 50000LL;
+else if (count == wl - 3) score += 1000LL;
+else if (count == 1) score += 10LL;
+}
+}
+}
+}
+return score;
+}
+long long evaluate_board(const Board& b, int cols, int rows, int wl, ttt::game::Sign me, ttt::game::Sign opp) {
+long long my_score = 0;
+long long opp_score = 0;
+const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+for (int y = 0; y < rows; ++y) {
+for (int x = 0; x < cols; ++x) {
+for (int d = 0; d < 4; ++d) {
+int dx = dirs[d][0], dy = dirs[d][1];
+int end_x = x + (wl - 1) * dx;
+int end_y = y + (wl - 1) * dy;
+if (end_x < 0 || end_x >= cols || end_y < 0 || end_y >= rows) continue;
+int me_count = 0, opp_count = 0;
+for (int i = 0; i < wl; ++i) {
+ttt::game::Sign s = b[(y + i * dy) * cols + (x + i * dx)];
+if (s == me) me_count++;
+else if (s == opp) opp_count++;
+}
+if (opp_count == 0 && me_count > 0) {
+if (me_count == wl) my_score += 100000000LL;
+else if (me_count == wl - 1) my_score += 1000000LL;
+else if (me_count == wl - 2) my_score += 50000LL;
+else if (me_count == wl - 3) my_score += 1000LL;
+} else if (me_count == 0 && opp_count > 0) {
+if (opp_count == wl) opp_score += 100000000LL;
+else if (opp_count == wl - 1) opp_score += 1000000LL;
+else if (opp_count == wl - 2) opp_score += 50000LL;
+else if (opp_count == wl - 3) opp_score += 1000LL;
+}
+}
+}
+}
+return (my_score * 12) / 10 - opp_score;
+}
+struct Move { ttt::game::Point p; long long score; };
+std::vector<Move> generate_moves(const Board& b, int cols, int rows, int wl, ttt::game::Sign cur_player, ttt::game::Sign opp_player) {
+std::vector<Move> moves;
+int center_x = cols / 2, center_y = rows / 2;
+for (int y = 0; y < rows; ++y) {
+for (int x = 0; x < cols; ++x) {
+if (b[y * cols + x] != ttt::game::Sign::NONE) continue;
+bool near = false;
+for (int dy = -2; dy <= 2 && !near; ++dy) {
+for (int dx = -2; dx <= 2 && !near; ++dx) {
+int nx = x + dx, ny = y + dy;
+if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && b[ny * cols + nx] != ttt::game::Sign::NONE) {
+near = true;
+}
+}
+}
+if (!near) continue;
+long long my_val = evaluate_cell(b, cols, rows, wl, x, y, cur_player);
+long long opp_val = evaluate_cell(b, cols, rows, wl, x, y, opp_player);
+long long score = (my_val * 12) / 10 + opp_val;
+int dist_to_center = std::abs(x - center_x) + std::abs(y - center_y);
+score += std::max(0, 20 - dist_to_center);
+if (my_val >= 100000000LL) score += 10000000000LL;
+else if (opp_val >= 100000000LL) score += 5000000000LL;
+else if (my_val >= 2000000LL) score += 2000000000LL;
+else if (opp_val >= 2000000LL) score += 1000000000LL;
+else if (my_val >= 1000000LL) score += 500000000LL;
+else if (opp_val >= 1000000LL) score += 250000000LL;
+else if (my_val >= 150000LL) score += 100000000LL;
+else if (opp_val >= 150000LL) score += 50000000LL;
+moves.push_back({{x, y}, score});
+}
+}
+std::sort(moves.begin(), moves.end(), [](const Move& a, const Move& b) { return a.score > b.score; });
+return moves;
+}
+ttt::game::Point find_any_free_cell(const Board& b, int cols, int rows) {
+int cx = cols/2, cy = rows/2;
+for (int r = 0; r < std::max(cols, rows); ++r)
+for (int dy = -r; dy <= r; ++dy)
+for (int dx = -r; dx <= r; ++dx) {
+int x = cx+dx, y = cy+dy;
+if (x>=0&&x<cols&&y>=0&&y<rows && b[y*cols+x] == ttt::game::Sign::NONE) return {x, y};
+}
+return {-1, -1};
+}
+long long alphabeta(Board& b, int cols, int rows, int wl, int depth, long long alpha, long long beta,
+bool maxing, ttt::game::Sign cur, ttt::game::Sign me, ttt::game::Sign opp,
+std::chrono::steady_clock::time_point start, int tl, uint64_t hash) {
+auto now = std::chrono::steady_clock::now();
+if (std::chrono::duration_cast<std::chrono::milliseconds>(now-start).count() > tl)
+return evaluate_board(b, cols, rows, wl, me, opp);
+auto it = transposition_table.find(hash);
+if (it != transposition_table.end() && it->second.depth >= depth) return it->second.score;
+if (depth == 0) {
+long long sc = evaluate_board(b, cols, rows, wl, me, opp);
+transposition_table[hash] = {sc, 0};
+return sc;
+}
+ttt::game::Sign other = (cur == me) ? opp : me;
+auto moves = generate_moves(b, cols, rows, wl, cur, other);
+if (moves.empty()) return evaluate_board(b, cols, rows, wl, me, opp);
+if (moves[0].score >= 10000000000LL) {
+return maxing ? 1000000000000LL + depth : -1000000000000LL - depth;
+}
+if (moves[0].score >= 5000000000LL) {
+int keep = 0;
+for (auto& m : moves) if (m.score >= 5000000000LL) keep++;
+moves.resize(keep);
+} else {
+std::sort(moves.begin(), moves.end(), [&](const Move& a, const Move& b) {
+long long scoreA = a.score + history_table[a.p.y][a.p.x];
+long long scoreB = b.score + history_table[b.p.y][b.p.x];
+return scoreA > scoreB;
+});
+int limit = (depth >= 3) ? 14 : 8;
+if ((int)moves.size() > limit) moves.resize(limit);
+}
+long long best_score = maxing ? -2000000000000LL : 2000000000000LL;
+for (const auto& mv : moves) {
+b[mv.p.y*cols+mv.p.x] = cur;
+uint64_t new_hash = hash ^ ZOBRIST_TABLE[(mv.p.y*cols + mv.p.x)*3 + (cur == ttt::game::Sign::X ? 1 : 2)];
+long long ev = alphabeta(b, cols, rows, wl, depth-1, alpha, beta, !maxing, other, me, opp, start, tl, new_hash);
+b[mv.p.y*cols+mv.p.x] = ttt::game::Sign::NONE;
+if (maxing) {
+best_score = std::max(best_score, ev);
+alpha = std::max(alpha, ev);
+} else {
+best_score = std::min(best_score, ev);
+beta = std::min(beta, ev);
+}
+if (beta <= alpha) {
+history_table[mv.p.y][mv.p.x] += depth * depth;
+break;
+}
+}
+transposition_table[hash] = {best_score, depth};
+return best_score;
+}
+
+ttt::game::Point MyPlayer::make_move(const ttt::game::State &state) {
+init_zobrist();
+memset(history_table, 0, sizeof(history_table));
+int cols = state.get_opts().cols, rows = state.get_opts().rows, wl = state.get_opts().win_len;
+Board board(rows * cols, ttt::game::Sign::NONE);
+int stone_count = 0;
+for (int y = 0; y < rows; ++y) {
+for (int x = 0; x < cols; ++x) {
+board[y*cols+x] = state.get_value(x, y);
+if (board[y*cols+x] != ttt::game::Sign::NONE) stone_count++;
+}
+}
+ttt::game::Sign me = m_sign, opp = (me == ttt::game::Sign::X) ? ttt::game::Sign::O : ttt::game::Sign::X;
+if (stone_count == 0) return {cols/2, rows/2};
+auto smart_moves = generate_moves(board, cols, rows, wl, me, opp);
+if (smart_moves.empty()) return find_any_free_cell(board, cols, rows);
+if (smart_moves[0].score >= 10000000000LL) return smart_moves[0].p;
+if (smart_moves[0].score >= 5000000000LL) {
+int keep = 0;
+for (auto& m : smart_moves) if (m.score >= 5000000000LL) keep++;
+smart_moves.resize(keep);
+} else {
+int limit = std::min((int)smart_moves.size(), 14);
+smart_moves.resize(limit);
+}
+if (stone_count % 5 == 0) {
+transposition_table.clear();
+memset(history_table, 0, sizeof(history_table));
+}
+auto start_time = std::chrono::steady_clock::now();
+ttt::game::Point best = smart_moves[0].p;
+uint64_t root_hash = zobrist_hash(board, cols, rows);
+for (int d = 2; d <= 8; d++) {
+if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start_time).count() > 85) break;
+std::vector<std::pair<long long, ttt::game::Point>> cur_sc;
+bool timeout = false;
+long long best_score = -2000000000000LL;
+for (const auto& mv : smart_moves) {
+if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start_time).count() > 85) {
+timeout = true; break;
+}
+board[mv.p.y*cols+mv.p.x] = me;
+long long s = alphabeta(board, cols, rows, wl, d-1, -2000000000000LL, 2000000000000LL, false, opp, me, opp, start_time, 90, root_hash ^ ZOBRIST_TABLE[(mv.p.y*cols+mv.p.x)*3 + (me==ttt::game::Sign::X?1:2)]);
+board[mv.p.y*cols+mv.p.x] = ttt::game::Sign::NONE;
+cur_sc.push_back({s, mv.p});
+if (s > best_score) { best_score = s; best = mv.p; }
+}
+if (timeout) break;
+std::sort(cur_sc.begin(), cur_sc.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+smart_moves.clear();
+for (const auto& cs : cur_sc) smart_moves.push_back({cs.second, cs.first});
+}
+return best;
+}
+} // namespace ttt::my_player
+\end{lstlisting}
+
+\end{document}

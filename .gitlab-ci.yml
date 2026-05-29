@@ -1,0 +1,16 @@
+stages:
+  - build
+
+build_report:
+  stage: build
+  image: blang/latex:ubuntu # Специальный образ Docker, где уже есть весь LaTeX
+  script:
+    - cd report
+    - pdflatex -interaction=nonstopmode report.tex
+  artifacts:
+    name: "Report_Sinelnikov"
+    paths:
+      - report/report.pdf
+  only:
+    changes:
+      - report/**/*

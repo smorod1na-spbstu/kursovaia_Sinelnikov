@@ -11,14 +11,18 @@ using game::Sign;
 using game::State;
 
 class MyPlayer : public IPlayer {
-  Sign m_sign = Sign::NONE;
-  const char *m_name;
-
 public:
-  MyPlayer(const char *name) : m_sign(Sign::NONE), m_name(name) {}
-  void set_sign(Sign sign) override;
-  Point make_move(const State &game) override;
-  const char *get_name() const override;
+    MyPlayer(const char *name) : m_sign(Sign::NONE), m_name(name) {}
+    ~MyPlayer() override = default;
+
+    void set_sign(Sign sign) override;
+    Point make_move(const State &state) override;
+    const char *get_name() const override;
+    void handle_event(const State &state, const Event &event) override;
+
+private:
+    Sign m_sign;
+    const char *m_name;
 };
 
-}; // namespace ttt::my_player
+} // namespace ttt::my_player
