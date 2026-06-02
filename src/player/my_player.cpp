@@ -12,8 +12,7 @@ namespace ttt::my_player {
 
 using Board = std::vector<ttt::game::Sign>;
 
-//ЛОГГЕР
-
+// ================= ЛОГГЕР =================
 void MyPlayer::set_sign(ttt::game::Sign sign) { m_sign = sign; }
 const char *MyPlayer::get_name() const { return m_name; }
 
@@ -73,8 +72,7 @@ void MyPlayer::handle_event(const ttt::game::State &state, const ttt::game::Even
     }
 }
 
-//ХЭШИРОВАНИЕ И ТАБЛИЦЫ 
-
+// ================= ХЭШИРОВАНИЕ И ТАБЛИЦЫ =================
 static int history_table[30][30];
 static uint64_t ZOBRIST_TABLE[30*30*3];
 static bool zobrist_init = false;
@@ -104,8 +102,8 @@ uint64_t zobrist_hash(const Board& b, int cols, int rows) {
     return h;
 }
 
+// ================= ЭКСПЕРТНАЯ ЭВРИСТИКА (С ДИНАМИЧЕСКИМ WIN_LEN) =================
 
-// Веса: 5=100M, 4=1M, 3=50K, 2=1K
 long long evaluate_cell(const Board& b, int cols, int rows, int wl, int cx, int cy, ttt::game::Sign player) {
     long long score = 0;
     const int dirs[4][2] = {{1,0}, {0,1}, {1,1}, {1,-1}};
@@ -134,11 +132,12 @@ long long evaluate_cell(const Board& b, int cols, int rows, int wl, int cx, int 
                 }
                 
                 if (!blocked) {
+                    // Динамическая оценка: защита от ухода в минус при малом wl
                     if (count == wl) score += 100000000LL;       // Win
-                    else if (count == wl - 1) score += 1000000LL; // 4 in a row
-                    else if (count == wl - 2) score += 50000LL;   // 3 in a row
-                    else if (count == wl - 3) score += 1000LL;    // 2 in a row
-                    else if (count == 1) score += 10LL;           // 1 in a row
+                    else if (count == wl - 1 && count > 0) score += 1000000LL; // 1 шаг до победы
+                    else if (count == wl - 2 && count > 0) score += 50000LL;   // 2 шага до победы
+                    else if (count == wl - 3 && count > 0) score += 1000LL;    // 3 шага до победы
+                    else if (count == 1) score += 10LL;           // Просто камень
                 }
             }
         }
@@ -168,19 +167,18 @@ long long evaluate_board(const Board& b, int cols, int rows, int wl, ttt::game::
 
                 if (opp_count == 0 && me_count > 0) {
                     if (me_count == wl) my_score += 100000000LL;
-                    else if (me_count == wl - 1) my_score += 1000000LL;
-                    else if (me_count == wl - 2) my_score += 50000LL;
-                    else if (me_count == wl - 3) my_score += 1000LL;
+                    else if (me_count == wl - 1 && me_count > 0) my_score += 1000000LL;
+                    else if (me_count == wl - 2 && me_count > 0) my_score += 50000LL;
+                    else if (me_count == wl - 3 && me_count > 0) my_score += 1000LL;
                 } else if (me_count == 0 && opp_count > 0) {
                     if (opp_count == wl) opp_score += 100000000LL;
-                    else if (opp_count == wl - 1) opp_score += 1000000LL;
-                    else if (opp_count == wl - 2) opp_score += 50000LL;
-                    else if (opp_count == wl - 3) opp_score += 1000LL;
+                    else if (opp_count == wl - 1 && opp_count > 0) opp_score += 1000000LL;
+                    else if (opp_count == wl - 2 && opp_count > 0) opp_score += 50000LL;
+                    else if (opp_count == wl - 3 && opp_count > 0) opp_score += 1000LL;
                 }
             }
         }
     }
-    // АГРЕССИВНЫЙ БАЛАНС: Наши угрозы ценятся на 20% выше, если только враг не делает мат
     return (my_score * 12) / 10 - opp_score; 
 }
 
@@ -212,15 +210,15 @@ std::vector<Move> generate_moves(const Board& b, int cols, int rows, int wl, ttt
             int dist_to_center = std::abs(x - center_x) + std::abs(y - center_y);
             score += std::max(0, 20 - dist_to_center); 
             
-            // КАСКАД ФОРСИРОВАННЫХ ХОДОВ (Никакого Horizon Effect)
-            if (my_val >= 100000000LL) score += 10000000000LL;       // 1. Наша победа (мат 1 ход)
-            else if (opp_val >= 100000000LL) score += 5000000000LL;  // 2. Блок мата врага
-            else if (my_val >= 2000000LL) score += 2000000000LL;     // 3. Открытая 4 наша (победа в 2 хода)
-            else if (opp_val >= 2000000LL) score += 1000000000LL;    // 4. Блок открытой 4 врага
-            else if (my_val >= 1000000LL) score += 500000000LL;      // 5. Закрытая 4 наша (форсирует ответ)
-            else if (opp_val >= 1000000LL) score += 250000000LL;     // 6. Блок закрытой 4 врага
-            else if (my_val >= 150000LL) score += 100000000LL;       // 7. Открытая 3 наша (очень сильная угроза)
-            else if (opp_val >= 150000LL) score += 50000000LL;       // 8. Блок открытой 3 врага
+            // Каскад работает идеально для любого wl
+            if (my_val >= 100000000LL) score += 10000000000LL;       // Мат в 1 ход
+            else if (opp_val >= 100000000LL) score += 5000000000LL;  // Блок мата врага
+            else if (my_val >= 2000000LL) score += 2000000000LL;     // Открытая линия длины wl-1
+            else if (opp_val >= 2000000LL) score += 1000000000LL;    // Блок открытой линии длины wl-1 врага
+            else if (my_val >= 1000000LL) score += 500000000LL;      // Закрытая линия длины wl-1 
+            else if (opp_val >= 1000000LL) score += 250000000LL;     // Блок закрытой wl-1 врага
+            else if (my_val >= 150000LL) score += 100000000LL;       // Открытая линия длины wl-2
+            else if (opp_val >= 150000LL) score += 50000000LL;       // Блок открытой wl-2
             
             moves.push_back({{x, y}, score});
         }
@@ -241,6 +239,7 @@ ttt::game::Point find_any_free_cell(const Board& b, int cols, int rows) {
     return {-1, -1};
 }
 
+// ================= ALPHA-BETA ПОИСК =================
 
 long long alphabeta(Board& b, int cols, int rows, int wl, int depth, long long alpha, long long beta, 
                     bool maxing, ttt::game::Sign cur, ttt::game::Sign me, ttt::game::Sign opp,
@@ -268,7 +267,7 @@ long long alphabeta(Board& b, int cols, int rows, int wl, int depth, long long a
         return maxing ? 1000000000000LL + depth : -1000000000000LL - depth;
     }
     
-    if (moves[0].score >= 5000000000LL) { 
+    if (moves[0].score >= 5000000000LL) {
         int keep = 0;
         for (auto& m : moves) if (m.score >= 5000000000LL) keep++;
         moves.resize(keep);
@@ -310,10 +309,15 @@ long long alphabeta(Board& b, int cols, int rows, int wl, int depth, long long a
     return best_score;
 }
 
+// ================= ГЛАВНЫЙ МЕТОД ХОДА =================
 
 ttt::game::Point MyPlayer::make_move(const ttt::game::State &state) {
     init_zobrist();
-    int cols = state.get_opts().cols, rows = state.get_opts().rows, wl = state.get_opts().win_len;
+    int cols = state.get_opts().cols;
+    int rows = state.get_opts().rows;
+    
+    // Синхронизируем нашу внутреннюю переменную с настройками движка перед каждым ходом
+    m_win_len = state.get_opts().win_len; 
     
     Board board(rows * cols, ttt::game::Sign::NONE);
     int stone_count = 0;
@@ -328,7 +332,7 @@ ttt::game::Point MyPlayer::make_move(const ttt::game::State &state) {
     
     if (stone_count == 0) return {cols/2, rows/2}; 
     
-    auto smart_moves = generate_moves(board, cols, rows, wl, me, opp);
+    auto smart_moves = generate_moves(board, cols, rows, m_win_len, me, opp);
     if (smart_moves.empty()) return find_any_free_cell(board, cols, rows);
     
     if (smart_moves[0].score >= 10000000000LL) return smart_moves[0].p;
@@ -351,7 +355,6 @@ ttt::game::Point MyPlayer::make_move(const ttt::game::State &state) {
     ttt::game::Point best = smart_moves[0].p;
     uint64_t root_hash = zobrist_hash(board, cols, rows);
     
-    
     for (int d = 2; d <= 8; d++) {
         if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start_time).count() > 85) break;
         
@@ -365,7 +368,7 @@ ttt::game::Point MyPlayer::make_move(const ttt::game::State &state) {
             }
             
             board[mv.p.y*cols+mv.p.x] = me;
-            long long s = alphabeta(board, cols, rows, wl, d-1, -2000000000000LL, 2000000000000LL, false, opp, me, opp, start_time, 90, root_hash ^ ZOBRIST_TABLE[(mv.p.y*cols+mv.p.x)*3 + (me==ttt::game::Sign::X?1:2)]);
+            long long s = alphabeta(board, cols, rows, m_win_len, d-1, -2000000000000LL, 2000000000000LL, false, opp, me, opp, start_time, 90, root_hash ^ ZOBRIST_TABLE[(mv.p.y*cols+mv.p.x)*3 + (me==ttt::game::Sign::X?1:2)]);
             board[mv.p.y*cols+mv.p.x] = ttt::game::Sign::NONE;
             
             cur_sc.push_back({s, mv.p});
@@ -382,4 +385,4 @@ ttt::game::Point MyPlayer::make_move(const ttt::game::State &state) {
     return best;
 }
 
-}
+} // namespace ttt::my_player

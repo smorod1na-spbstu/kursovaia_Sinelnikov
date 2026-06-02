@@ -1,0 +1,2 @@
+/usr/bin/ar qc libtttcore.a CMakeFiles/tttcore.dir/src/core/event.cpp.o CMakeFiles/tttcore.dir/src/core/game.cpp.o CMakeFiles/tttcore.dir/src/core/state.cpp.o CMakeFiles/tttcore.dir/src/core/field.cpp.o
+/usr/bin/ranlib libtttcore.a

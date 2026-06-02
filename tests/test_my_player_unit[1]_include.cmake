@@ -1,0 +1,5 @@
+if(EXISTS "/home/smorod1na/kursovaia_Sinelnikov/tests/test_my_player_unit[1]_tests.cmake")
+  include("/home/smorod1na/kursovaia_Sinelnikov/tests/test_my_player_unit[1]_tests.cmake")
+else()
+  add_test(test_my_player_unit_NOT_BUILT test_my_player_unit_NOT_BUILT)
+endif()

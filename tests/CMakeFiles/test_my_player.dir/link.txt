@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/test_my_player.dir/test_my_player.cpp.o -o test_my_player  ../libtttplayer.a ../libtttcore.a 

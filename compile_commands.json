@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/tttcore.dir/src/core/event.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/src/core/event.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/src/core/event.cpp",
+  "output": "CMakeFiles/tttcore.dir/src/core/event.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/tttcore.dir/src/core/game.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/src/core/game.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/src/core/game.cpp",
+  "output": "CMakeFiles/tttcore.dir/src/core/game.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/tttcore.dir/src/core/state.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/src/core/state.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/src/core/state.cpp",
+  "output": "CMakeFiles/tttcore.dir/src/core/state.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/tttcore.dir/src/core/field.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/src/core/field.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/src/core/field.cpp",
+  "output": "CMakeFiles/tttcore.dir/src/core/field.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/tttplayer.dir/src/player/my_player.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/src/player/my_player.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/src/player/my_player.cpp",
+  "output": "CMakeFiles/tttplayer.dir/src/player/my_player.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/tttplayer.dir/src/player/my_observer.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/src/player/my_observer.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/src/player/my_observer.cpp",
+  "output": "CMakeFiles/tttplayer.dir/src/player/my_observer.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov/tests",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/test_my_player.dir/test_my_player.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/tests/test_my_player.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/tests/test_my_player.cpp",
+  "output": "tests/CMakeFiles/test_my_player.dir/test_my_player.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov/tests",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -o CMakeFiles/test_stats.dir/test_stats.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/tests/test_stats.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/tests/test_stats.cpp",
+  "output": "tests/CMakeFiles/test_stats.dir/test_stats.cpp.o"
+},
+{
+  "directory": "/home/smorod1na/kursovaia_Sinelnikov/tests",
+  "command": "/usr/bin/c++  -I/home/smorod1na/kursovaia_Sinelnikov/src -isystem /usr/include/c++/13 -isystem /usr/include/x86_64-linux-gnu/c++/13 -isystem /usr/include/c++/13/backward -isystem /usr/lib/gcc/x86_64-linux-gnu/13/include -isystem /usr/local/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include -std=gnu++17 -DGTEST_HAS_PTHREAD=1 -o CMakeFiles/test_my_player_unit.dir/test_my_player_unit.cpp.o -c /home/smorod1na/kursovaia_Sinelnikov/tests/test_my_player_unit.cpp",
+  "file": "/home/smorod1na/kursovaia_Sinelnikov/tests/test_my_player_unit.cpp",
+  "output": "tests/CMakeFiles/test_my_player_unit.dir/test_my_player_unit.cpp.o"
+}
+]
