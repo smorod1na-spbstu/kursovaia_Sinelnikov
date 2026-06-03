@@ -1,6 +1,22 @@
-build/*
-.cache/*
-**/.DS_Store
-libs/lib*
-.vscode/
+# Сборка CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.a
+*.so
+build/
 
+# Артефакты LaTeX (оставляем только исходники .tex)
+report/*.pdf
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.synctex.gz
+
+# Прочее
+my_test.cpp
+all_games_moves.txt
+*.txt~
+*.cpp~

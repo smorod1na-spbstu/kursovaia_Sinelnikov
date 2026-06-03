@@ -1,2 +1,0 @@
-/usr/bin/ar qc libtttplayer.a CMakeFiles/tttplayer.dir/src/player/my_player.cpp.o CMakeFiles/tttplayer.dir/src/player/my_observer.cpp.o
-/usr/bin/ranlib libtttplayer.a
