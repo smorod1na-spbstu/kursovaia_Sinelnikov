@@ -137,8 +137,6 @@
     \item Использовать результаты предыдущего уровня для упорядочивания ходов на следующем уровне (через таблицы истории).
 \end{itemize}
 
-\textbf{Альфа-бета-отсечение.} В каждом узле минимакса поддерживаются границы $[\alpha, \beta]$ — интервал значений, который может повлиять на результат в корне. Если для максимизирующего узла найден ход со значением $v \ge \beta$ ($\beta$-отсечение) или для минимизирующего $v \le \alpha$ ($\alpha$-отсечение), оставшиеся ходы в узле не рассматриваются.
-
 \textbf{Zobrist-хеширование и таблица транспозиций.} Для устранения повторного перебора одинаковых позиций используется Zobrist-хеширование. Каждой клетке $(x, y)$ и знаку ($X$ или $O$) сопоставляется случайное 64-битное число $Z[x, y, s]$. Хеш позиции вычисляется как XOR всех чисел для занятых клеток:
 \[
 H = \bigoplus_{(x,y): G[y][x] \neq \text{NONE}} Z[x, y, G[y][x]]
@@ -146,6 +144,8 @@ H = \bigoplus_{(x,y): G[y][x] \neq \text{NONE}} Z[x, y, G[y][x]]
 При выполнении хода хеш обновляется инкрементально: $H_{\text{new}} = H \oplus Z[x, y, s]$.
 
 Результаты оценки позиций сохраняются в таблице транспозиций (Transposition Table) — хеш-таблице, ключом которой является Zobrist-хеш позиции. При повторном посещении позиции возвращается сохранённая оценка, что ускоряет поиск в 2-3 раза.
+
+\textbf{Альфа-бета-отсечение.} В каждом узле минимакса поддерживаются границы $[\alpha, \beta]$ — интервал значений, который может повлиять на результат в корне. Если для максимизирующего узла найден ход со значением $v \ge \beta$ ($\beta$-отсечение) или для минимизирующего $v \le \alpha$ ($\alpha$-отсечение), оставшиеся ходы в узле не рассматриваются.
 
 \textbf{Управление временем.} На весь ход выделяется бюджет $T_{\text{budget}} = 0.85 \cdot T_{\text{limit}}$, где $T_{\text{limit}} = 100$ мс. Перед каждым рекурсивным вызовом проверяется оставшееся время; при его исчерпании поднимается флаг тайм-аута, и поиск прерывается. Дополнительная проверка после каждой завершённой глубины: если прошло более $0.85 \cdot T_{\text{limit}}$, углубление прекращается.
 
@@ -487,10 +487,19 @@ public:
     void set_sign(Sign sign) override;
     Point make_move(const State& state) override;
     const char* get_name() const override;
-    void handle_event(const State&, const Event&) override;
+    std::vector<Point> get_candidates(const State& state) const;
+    int evaluate(const State& state, Sign our_sign) const;
+    int minimax(std::vector<Sign>& board, int depth, int alpha, int beta,
+                bool is_maximizing, Sign current_player, int token_budget_ms);
+    int get_weight(int k, int open_sides) const;
+
+    int tss_search(std::vector<Sign>& board, Sign attacker, Sign defender,
+                   int depth_limit, int& nodes_visited);
+    int quiescence_search(std::vector<Sign>& board, int alpha, int beta,
+                          Sign current_player, int& nodes_visited);
 };
 
-} // namespace ttt::my_player
+}; // namespace ttt::my_player
 \end{lstlisting}
 
 \chapter{Исходный код методов класса}
@@ -688,7 +697,7 @@ std::vector<Move> MyPlayer::generate_moves(const Board& b,
             long long score = (my_val * 12) / 10 + opp_val; 
             int dist_to_center = std::abs(x - center_x) + 
                                 std::abs(y - center_y);
-            int center_bonus_radius = std::max(cols, rows) / 2; 
+           int center_bonus_radius = std::max(cols, rows) / 2; 
             score += std::max(0, center_bonus_radius - 
                              dist_to_center); 
             
