@@ -90,17 +90,10 @@ TEST_F(MyPlayerTest, RespectsTimeLimit) {
     EXPECT_LT(duration_ms, 120) << "Бот думал слишком долго (" << duration_ms << " мс)!";
 }
 
-// ==========================================
-// НОВЫЕ ТЕСТЫ ПО ТРЕБОВАНИЮ ПРЕПОДАВАТЕЛЯ
-// ==========================================
-
-// ТЕСТ 5: Бот ОБЯЗАН блокировать диагональную угрозу противника
 // ТЕСТ 5: Бот ОБЯЗАН блокировать диагональную угрозу противника
 TEST_F(MyPlayerTest, BlocksDiagonalThreat) {
     State state(opts);
     
-    // ВАЖНО: В крестиках-ноликах крестики (X) ВСЕГДА ходят первыми!
-    // Мы заставляем X строить безопасный "квадратик" в углу, чтобы отдать ходы O
     state.process_move(Sign::X, 1, 1);
     state.process_move(Sign::O, 5, 5);
     state.process_move(Sign::X, 1, 2);
@@ -111,7 +104,7 @@ TEST_F(MyPlayerTest, BlocksDiagonalThreat) {
     state.process_move(Sign::O, 8, 8); // У O собрана смертельная линия: (5,5), (6,6), (7,7), (8,8)
     
     MyPlayer player("TestBot");
-    player.set_sign(Sign::X); // Мы играем за X и должны экстренно защищаться
+    player.set_sign(Sign::X); 
     
     Point move = player.make_move(state);
     
