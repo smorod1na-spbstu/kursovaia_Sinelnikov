@@ -10,14 +10,12 @@ int main(int argc, char *argv[]) {
         std::srand(atoi(argv[1]));
     }
 
-    
-    ttt::my_player::MyPlayer p1("MyPlayer"); ////поместите вашего игрока сюда
-    ttt::game::IPlayer *p2 = ttt::baseline::get_easy_player("BaselineEasy"); //здесь вы можете выбрать между базовыми игроками: сложным и лёгким
+    ttt::my_player::MyPlayer p1("MyPlayer");
+    ttt::game::IPlayer *p2 = ttt::baseline::get_harder_player("BaselineHard");
 
-    auto result = ttt::test::run_game_tests(p1, *p2, 100); //здесь вы можете изменить количество тестовых итераций ~~ 100
+    auto result = ttt::test::run_game_tests(p1, *p2, 100);
     
-    
-    ttt::test::print_test_results(result, "MyPlayer", "BaselineEasy");
+    ttt::test::print_test_results(result, "MyPlayer", "BaselineHard");
     
     delete p2;
     return 0;
