@@ -18,10 +18,7 @@ CTestTestfile.cmake
 compile_commands.json
 build/
 
-
-*test_my_player_unit[1]_tests.cmake
-*test_my_player_unit[1]_include.cmake
-
+*.cmake
 
 # 3. Мусор от LaTeX (оставляем только .tex)
 
