@@ -19,7 +19,8 @@ compile_commands.json
 build/
 
 # Специфические временные файлы CTest для GTest
-*test_my_player_unit[1]_*
+*test_my_player_unit[1]_tests.cmake*
+*test_my_player_unit[1]_include.cmake*
 
 
 # 3. Мусор от LaTeX (оставляем только .tex)
