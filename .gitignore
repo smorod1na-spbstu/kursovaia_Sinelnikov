@@ -1,22 +1,47 @@
-# Сборка CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
+
+test_my_player
+test_my_player_unit
+test_stats
+
 *.a
 *.so
+*.o
+
+
+# 2. Артефакты сборки CMake и тестов CTest
+
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
 build/
 
-# Артефакты LaTeX (оставляем только исходники .tex)
-report/*.pdf
-report/*.aux
-report/*.log
-report/*.out
-report/*.toc
-report/*.synctex.gz
+# Специфические временные файлы CTest для GTest
+*test_my_player_unit[1]_*
 
-# Прочее
-my_test.cpp
+
+# 3. Мусор от LaTeX (оставляем только .tex)
+
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+
+# 4. Временные файлы редакторов и IDE
+
+.idea/
+.vscode/
+*~
+*.swp
+
+
+# 5. Прочие локальные файлы тестов
+
+
 all_games_moves.txt
-*.txt~
-*.cpp~
