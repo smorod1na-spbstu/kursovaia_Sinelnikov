@@ -16,7 +16,8 @@ private:
     game::Sign m_sign = game::Sign::NONE;
     const char *m_name;
     int m_win_len = 5;
-
+std::vector<std::vector<uint64_t>> zobrist_table;
+    void init_zobrist_table(int max_cells);
     // 1. Избавляемся от глобальных переменных. Теперь у каждого бота своя память!
     std::vector<std::vector<int>> m_history_table;
     std::vector<uint64_t> m_zobrist_table;
@@ -38,6 +39,7 @@ public:
     game::Point make_move(const game::State &state) override;
     const char *get_name() const override;
     void handle_event(const game::State &state, const game::Event &event) override;
+    int get_weight(int length, int blocked);
 };
 
 } // namespace ttt::my_player

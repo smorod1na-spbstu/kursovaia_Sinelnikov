@@ -1,6 +1,10 @@
 #include "my_player.hpp"
 #include <algorithm>
 #include <cmath>
+#include <random>  
+#include <chrono>
+#include <vector>
+
 
 namespace ttt::my_player {
 
@@ -10,8 +14,16 @@ using Board = std::vector<ttt::game::Sign>;
 MyPlayer::MyPlayer(const char *name) 
     : m_name(name), 
       m_history_table(30, std::vector<int>(30, 0)), 
-      m_zobrist_table(30 * 30 * 3, 0) {}
+      m_zobrist_table(30 * 30 * 3, 0) {init_zobrist_table(30 * 30);}
+void MyPlayer::init_zobrist_table(int max_cells) {
+    std::mt19937_64 rng(42); // Фиксированный сид (например, 42), чтобы хэши были детерминированными
+    zobrist_table.resize(max_cells, std::vector<uint64_t>(2));
 
+    for (int i = 0; i < max_cells; ++i) {
+        zobrist_table[i][0] = rng(); // Случайное число для Sign::X
+        zobrist_table[i][1] = rng(); // Случайное число для Sign::O
+    }
+}
 void MyPlayer::set_sign(ttt::game::Sign sign) { m_sign = sign; }
 const char *MyPlayer::get_name() const { return m_name; }
 
@@ -29,18 +41,31 @@ void MyPlayer::init_zobrist() {
     }
     m_zobrist_init = true;
 }
+uint64_t MyPlayer::zobrist_hash(const std::vector<ttt::game::Sign>& board, int cols, int rows) {
+    uint64_t hash = 0;
 
-uint64_t MyPlayer::zobrist_hash(const Board& b, int cols, int rows) {
-    uint64_t h = 0;
-    for (int y = 0; y < rows; ++y) {
-        for (int x = 0; x < cols; ++x) {
-            ttt::game::Sign s = b[y*cols+x];
-            if (s == ttt::game::Sign::X || s == ttt::game::Sign::O)
-                h ^= m_zobrist_table[(y*cols + x)*3 + (s == ttt::game::Sign::X ? 1 : 2)];
+    for (int i = 0; i < cols * rows; ++i) {
+        if (board[i] == ttt::game::Sign::NONE) {
+            continue; // Пустые клетки не влияют на хэш
+        }
+
+        int sign_idx = -1;
+        if (board[i] == ttt::game::Sign::X) {
+            sign_idx = 0;
+        } else if (board[i] == ttt::game::Sign::O) {
+            sign_idx = 1;
+        }
+
+        if (sign_idx != -1 && i < static_cast<int>(zobrist_table.size())) {
+            // Применяем операцию XOR
+            hash ^= zobrist_table[i][sign_idx];
         }
     }
-    return h;
+
+    return hash;
 }
+
+
 
 long long MyPlayer::evaluate_cell(const Board& b, int cols, int rows, int wl, int cx, int cy, ttt::game::Sign player) {
     long long score = 0;
@@ -241,7 +266,16 @@ long long MyPlayer::alphabeta(Board& b, int cols, int rows, int wl, int depth, l
     m_transposition_table[hash] = {best_score, depth};
     return best_score;
 }
-
+int MyPlayer::get_weight(int length, int open_sides) {
+    if (length >= 5) {
+        return 1000000; // Вес выигрышной линии
+    }
+    if (length == 3) {
+        if (open_sides == 2) return 1000; // Открытая тройка
+        return 100;                       // Полузакрытая или закрытая тройка
+    }
+    return length * 10; // Базовый вес для остальных случаев
+}
 ttt::game::Point MyPlayer::make_move(const ttt::game::State &state) {
     init_zobrist();
     int cols = state.get_opts().cols;
